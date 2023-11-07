@@ -33,9 +33,23 @@ exports.getOneBook = (req, res, next) => {
     );
   };
 
-exports.getBestBooks = (req, res, next) => {
-
- }
+  exports.getBestBooks = (req, res, next) => {
+    Book.find()
+    .then( (books) => {
+        books.sort((a, b) => b.averageRating - a.averageRating)
+        books.length = 3
+        res.status(200).json(books);
+      })
+    .catch(
+      (error) => {
+        res.status(400).json({
+          error: error
+        });
+      }
+    );
+  };
+       
+ 
 
   exports.createBook = (req, res, next) => {
     const bookObject = JSON.parse(req.body.book);
