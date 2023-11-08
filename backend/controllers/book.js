@@ -34,11 +34,11 @@ exports.getOneBook = (req, res, next) => {
   };
 
   exports.getBestBooks = (req, res, next) => {
-    Book.find()
-    .then( (books) => {
-        books.sort((a, b) => b.averageRating - a.averageRating)
-        books.length = 3
-        res.status(200).json(books);
+   Book.find()
+    .then( (bestBooks) => {
+        bestBooks.sort((a, b) => b.averageRating - a.averageRating)
+        bestBooks.length = 3
+        res.status(200).json(bestBooks);
       })
     .catch(
       (error) => {
@@ -90,6 +90,7 @@ exports.getOneBook = (req, res, next) => {
 
 
  exports.deleteBook = (req, res, next) => {
+   
     Book.findOne({ _id: req.params.id})
         .then(book => {
             if (book.userId != req.auth.userId) {

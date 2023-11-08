@@ -6,7 +6,8 @@ const path = require('path');
 
 
 const userRoutes = require('./routes/user');
-const bookRoutes = require('./routes/book')
+const bookRoutes = require('./routes/book');
+
 
 
 mongoose.connect('mongodb+srv://poussin-5:Guigui150592@cluster0.bhytr4r.mongodb.net/',
