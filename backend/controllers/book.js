@@ -110,6 +110,41 @@ exports.getOneBook = (req, res, next) => {
  };
 
  exports.rateBook = (req, res, next) => {
- 
+
+const newRate = req.body
+
+Book.findOne({
+    _id: req.params.id
+  })
+  .then(
+    (book) => { 
+    const newRating = {userId : newRate.userId, grade : newRate.rating}
+    const ratings = book.ratings
+    ratings.push(newRating)
+
+    const grades = []
+    ratings.forEach( rating => {
+    grades.push(rating.grade)
+    });
+
+    
+    let sum = 0;
+    for (let i = 0; i < grades.length; i++) {
+      sum += grades[i];
+    }
+    let averageRating = sum/grades.length
+    book.averageRating = averageRating
+
+    res.status(200).json(book);    
+    }
+  )
+  .catch(
+    (error) => {
+      res.status(404).json({
+        error: error
+      });
+    }
+  );
+   
 
  }
