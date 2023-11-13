@@ -1,4 +1,5 @@
 const Book = require('../models/book');
+const sharp = require ('sharp')
 const fs = require('fs');
 
 exports.getAllBooks = (req, res, next) => {
@@ -51,10 +52,11 @@ exports.getOneBook = (req, res, next) => {
        
  
 
-  exports.createBook = (req, res, next) => {
+  exports.createBook =  (req, res, next) => {
     const bookObject = JSON.parse(req.body.book);
     delete bookObject._id;
     delete bookObject._userId;
+   
     const book = new Book({
         ...bookObject,
         userId: req.auth.userId,
@@ -117,25 +119,22 @@ Book.findOne({
     _id: req.params.id
   })
   .then(
-    (book) => { 
+    (book) => {      
     const newRating = {userId : newRate.userId, grade : newRate.rating}
     const ratings = book.ratings
     ratings.push(newRating)
 
     const grades = []
-    ratings.forEach( rating => {
-    grades.push(rating.grade)
-    });
+    ratings.forEach( rating => { grades.push(rating.grade)});
 
-    
     let sum = 0;
-    for (let i = 0; i < grades.length; i++) {
-      sum += grades[i];
-    }
+    for (let i = 0; i < grades.length; i++) {sum += grades[i];}
     let averageRating = sum/grades.length
     book.averageRating = averageRating
-
-    res.status(200).json(book);    
+   
+    book.save()
+    .then(() => res.status(200).json(book))
+    .catch(error => { res.status(400).json( { error })})
     }
   )
   .catch(
