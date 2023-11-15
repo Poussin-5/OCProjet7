@@ -59,10 +59,11 @@ exports.getOneBook = (req, res, next) => {
 
   exports.createBook =  async (req, res, next) => {
 
-      sharp(req.file.path)
+
+    let compressName = `images/compress_${req.file.filename}`
+     await sharp(req.file.path)
       .resize({heigth : 300})
-      .grayscale()
-      .toFile(`images/compress_${req.file.filename}`) 
+      .toFile(compressName) 
       
     
     const bookObject = JSON.parse(req.body.book);
@@ -72,7 +73,7 @@ exports.getOneBook = (req, res, next) => {
     const book = new Book({
         ...bookObject,
         userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get('host')}/images/compress_${req.file.filename}`
+        imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`
     });
 
    
@@ -91,18 +92,18 @@ exports.getOneBook = (req, res, next) => {
     });
  };
 
- exports.modifyBook = (req, res, next) => {
-  
+ exports.modifyBook = async (req, res, next) => {
+
+  let compressName = `images/compress_${req.file.filename}`
   if (req.file) {
-    sharp(req.file.path)
+   await sharp(req.file.path)
     .resize({heigth : 300})
-    .grayscale()
-    .toFile(`images/compress_${req.file.filename}`) 
+    .toFile(compressName) 
   }
   
       const bookObject = req.file ? {
           ...JSON.parse(req.body.book),
-          imageUrl: `${req.protocol}://${req.get('host')}/images/compress_${req.file.filename}`
+          imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`
       } : { ...req.body };
   
       delete bookObject._userId;
