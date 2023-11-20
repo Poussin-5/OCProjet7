@@ -178,6 +178,7 @@ Book.findOne({
     
         let averageRating = sum/ratings.length
         book.averageRating = averageRating.toFixed(1)
+
    
     book.save()
     .then(() => res.status(200).json(book))
