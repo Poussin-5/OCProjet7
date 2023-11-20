@@ -164,6 +164,7 @@ Book.findOne({
     (book) => {      
     const newRating = {userId : newRate.userId, grade : newRate.rating}
     const ratings = book.ratings
+
     ratings.push(newRating)
 
     const grades = []
@@ -174,7 +175,7 @@ Book.findOne({
       sum += grades[i];
     }
     let averageRating = sum/grades.length
-    book.averageRating = averageRating
+    book.averageRating = averageRating.toFixed(1)
    
     book.save()
     .then(() => res.status(200).json(book))
