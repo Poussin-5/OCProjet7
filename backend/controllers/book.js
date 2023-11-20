@@ -43,7 +43,9 @@ exports.getOneBook = (req, res, next) => {
    Book.find()
     .then( (bestBooks) => {
         bestBooks.sort((a, b) => b.averageRating - a.averageRating)
-        bestBooks.length = 3
+        if (bestBooks.length > 3) {
+          bestBooks.length = 3
+        }
         res.status(200).json(bestBooks);
       })
     .catch(
@@ -168,7 +170,9 @@ Book.findOne({
     ratings.forEach( rating => { grades.push(rating.grade)});
 
     let sum = 0;
-    for (let i = 0; i < grades.length; i++) {sum += grades[i];}
+    for (let i = 0; i < grades.length; i++) {
+      sum += grades[i];
+    }
     let averageRating = sum/grades.length
     book.averageRating = averageRating
    
