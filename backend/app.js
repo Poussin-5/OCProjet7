@@ -11,7 +11,7 @@ const bookRoutes = require('./routes/book');
 
 
 
-mongoose.connect(`mongodb+srv://${process.env.MONGO_DB}@cluster0.bhytr4r.mongodb.net/`,
+mongoose.connect(`mongodb+srv://${process.env.MONGO_DB}`,
   { useNewUrlParser: true,
     useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB réussie !'))
