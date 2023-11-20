@@ -161,21 +161,23 @@ Book.findOne({
     _id: req.params.id
   })
   .then(
-    (book) => {      
-    const newRating = {userId : newRate.userId, grade : newRate.rating}
+    (book) => {   
+      
     const ratings = book.ratings
 
+    if(ratings.some((rating) => rating.userId === req.userId)) {
+     res.status(400).json({ error })
+    } 
+
+    const newRating = {userId : newRate.userId, grade : newRate.rating}
     ratings.push(newRating)
 
-    const grades = []
-    ratings.forEach( rating => { grades.push(rating.grade)});
-
-    let sum = 0;
-    for (let i = 0; i < grades.length; i++) {
-      sum += grades[i];
-    }
-    let averageRating = sum/grades.length
-    book.averageRating = averageRating.toFixed(1)
+    const sum = ratings.reduce((accumulator, rating) => {
+      return accumulator + rating.grade
+    }, 0)
+    
+        let averageRating = sum/ratings.length
+        book.averageRating = averageRating.toFixed(1)
    
     book.save()
     .then(() => res.status(200).json(book))
