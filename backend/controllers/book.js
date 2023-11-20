@@ -167,14 +167,11 @@ Book.findOne({
 
     ratings.push(newRating)
 
-    const grades = []
-    ratings.forEach( rating => { grades.push(rating.grade)});
+const sum = ratings.reduce((accumulator, rating) => {
+  return accumulator + rating.grade
+}, 0)
 
-    let sum = 0;
-    for (let i = 0; i < grades.length; i++) {
-      sum += grades[i];
-    }
-    let averageRating = sum/grades.length
+    let averageRating = sum/ratings.length
     book.averageRating = averageRating.toFixed(1)
    
     book.save()
