@@ -78,9 +78,6 @@ exports.getOneBook = (req, res, next) => {
         imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`
     });
 
-   
-    
-
     book.save()
     .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
     .catch(error => { res.status(400).json( { error })})
@@ -96,8 +93,9 @@ exports.getOneBook = (req, res, next) => {
 
  exports.modifyBook = async (req, res, next) => {
 
-  let compressName = `images/compress_${req.file.filename}`
+  
   if (req.file) {
+    let compressName = `images/compress_${req.file.filename}`
    await sharp(req.file.path)
     .resize({heigth : 300})
     .toFile(compressName) 
@@ -105,7 +103,7 @@ exports.getOneBook = (req, res, next) => {
   
       const bookObject = req.file ? {
           ...JSON.parse(req.body.book),
-          imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`
+          imageUrl: `${req.protocol}://${req.get('host')}/images/compress_${req.file.filename}`
       } : { ...req.body };
   
       delete bookObject._userId;
@@ -117,11 +115,14 @@ exports.getOneBook = (req, res, next) => {
                   Book.updateOne({ _id: req.params.id}, { ...bookObject, _id: req.params.id})
                   .then(() => res.status(200).json({message : 'Objet modifié!'}))
                   .catch(error => res.status(401).json({ error }));
-                  fs.unlink( `images/${req.file.filename}`, (err) => {
-                    if (err) {
-                      console.error(err);
-                    } 
-                  });
+                  if (req.file) {
+                    fs.unlink( `images/${req.file.filename}`, (err) => {
+                      if (err) {
+                        console.error(err);
+                      } 
+                    });
+                  }
+                 
               }
           })
           .catch((error) => {
