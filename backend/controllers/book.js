@@ -1,198 +1,178 @@
-const Book = require('../models/book');
-const sharp = require ('sharp');
-const fs = require('fs');
-
-
-
-
-
+const Book = require('../models/book')
+const sharp = require('sharp')
+const fs = require('fs')
 
 exports.getAllBooks = (req, res, next) => {
-    Book.find()
-    .then( (books) => {
-        res.status(200).json(books);
+  Book.find()
+    .then((books) => {
+      res.status(200).json(books)
+    })
+    .catch((error) => {
+      res.status(400).json({
+        error: error,
       })
-    .catch(
-      (error) => {
-        res.status(400).json({
-          error: error
-        });
-      }
-    );
-  };
+    })
+}
 
 exports.getOneBook = (req, res, next) => {
-    Book.findOne({
-      _id: req.params.id
+  Book.findOne({
+    _id: req.params.id,
+  })
+    .then((book) => {
+      res.status(200).json(book)
     })
-    .then(
-      (book) => {
-        res.status(200).json(book);
-      }
-    )
-    .catch(
-      (error) => {
-        res.status(404).json({
-          error: error
-        });
-      }
-    );
-  };
-
-  exports.getBestBooks = (req, res, next) => {
-   Book.find()
-    .then( (bestBooks) => {
-        bestBooks.sort((a, b) => b.averageRating - a.averageRating)
-        if (bestBooks.length > 3) {
-          bestBooks.length = 3
-        }
-        res.status(200).json(bestBooks);
+    .catch((error) => {
+      res.status(404).json({
+        error: error,
       })
-    .catch(
-      (error) => {
-        res.status(400).json({
-          error: error
-        });
+    })
+}
+
+exports.getBestBooks = (req, res, next) => {
+  Book.find()
+    .then((bestBooks) => {
+      bestBooks.sort((a, b) => b.averageRating - a.averageRating)
+      if (bestBooks.length > 3) {
+        bestBooks.length = 3
       }
-    );
-  };
-       
- 
+      res.status(200).json(bestBooks)
+    })
+    .catch((error) => {
+      res.status(400).json({
+        error: error,
+      })
+    })
+}
 
-  exports.createBook =  async (req, res, next) => {
+exports.createBook = async (req, res, next) => {
+  let compressName = `images/compress_${req.file.filename}`
+  await sharp(req.file.path).resize({ heigth: 300 }).toFile(compressName)
 
+  const bookObject = JSON.parse(req.body.book)
+  delete bookObject._id
+  delete bookObject._userId
 
-    let compressName = `images/compress_${req.file.filename}`
-     await sharp(req.file.path)
-      .resize({heigth : 300})
-      .toFile(compressName) 
-      
-    
-    const bookObject = JSON.parse(req.body.book);
-    delete bookObject._id;
-    delete bookObject._userId;
+  const book = new Book({
+    ...bookObject,
+    userId: req.auth.userId,
+    imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`,
+  })
 
-    const book = new Book({
-        ...bookObject,
-        userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`
-    });
+  book
+    .save()
+    .then(() => {
+      res.status(201).json({ message: 'Objet enregistré !' })
+    })
+    .catch((error) => {
+      res.status(400).json({ error })
+    })
 
-    book.save()
-    .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
-    .catch(error => { res.status(400).json( { error })})
+  fs.unlink(req.file.path, (err) => {
+    if (err) {
+      console.error(err)
+    } else {
+      // Suppression réussie !
+    }
+  })
+}
 
-    fs.unlink(req.file.path, (err) => {
-      if (err) {
-        console.error(err);
-      } else {
-        // Suppression réussie !
-      }
-    });
- };
-
- exports.modifyBook = async (req, res, next) => {
-
-  
+exports.modifyBook = async (req, res, next) => {
   if (req.file) {
     let compressName = `images/compress_${req.file.filename}`
-   await sharp(req.file.path)
-    .resize({heigth : 300})
-    .toFile(compressName) 
+    await sharp(req.file.path).resize({ heigth: 300 }).toFile(compressName)
   }
-  
-      const bookObject = req.file ? {
-          ...JSON.parse(req.body.book),
-          imageUrl: `${req.protocol}://${req.get('host')}/images/compress_${req.file.filename}`
-      } : { ...req.body };
-  
-      delete bookObject._userId;
-      Book.findOne({_id: req.params.id})
-          .then((book) => {
-              if (book.userId != req.auth.userId) {
-                  res.status(401).json({ message : 'Not authorized'});
-              } else {
-                  Book.updateOne({ _id: req.params.id}, { ...bookObject, _id: req.params.id})
-                  .then(() => res.status(200).json({message : 'Objet modifié!'}))
-                  .catch(error => res.status(401).json({ error }));
-                  if (req.file) {
-                    fs.unlink( `images/${req.file.filename}`, (err) => {
-                      if (err) {
-                        console.error(err);
-                      } 
-                    });
-                  }
-                 
-              }
-          })
-          .catch((error) => {
-              res.status(400).json({ error });
-          });
-  
-         
-   };
-  
 
+  const bookObject = req.file
+    ? {
+        ...JSON.parse(req.body.book),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/compress_${
+          req.file.filename
+        }`,
+      }
+    : { ...req.body }
 
- exports.deleteBook = (req, res, next) => {
-   
-    Book.findOne({ _id: req.params.id})
-        .then(book => {
-            if (book.userId != req.auth.userId) {
-                res.status(401).json({message: 'Not authorized'});
-            } else {
-                const filename = book.imageUrl.split('/images/')[1];
-                fs.unlink(`images/${filename}`, () => {
-                    Book.deleteOne({_id: req.params.id})
-                        .then(() => { res.status(200).json({message: 'Objet supprimé !'})})
-                        .catch(error => res.status(401).json({ error }));
-                });
+  delete bookObject._userId
+  Book.findOne({ _id: req.params.id })
+    .then((book) => {
+      if (book.userId != req.auth.userId) {
+        res.status(401).json({ message: 'Not authorized' })
+      } else {
+        Book.updateOne(
+          { _id: req.params.id },
+          { ...bookObject, _id: req.params.id }
+        )
+          .then(() => res.status(200).json({ message: 'Objet modifié!' }))
+          .catch((error) => res.status(401).json({ error }))
+        if (req.file) {
+          fs.unlink(`images/${req.file.filename}`, (err) => {
+            if (err) {
+              console.error(err)
             }
+          })
+        }
+      }
+    })
+    .catch((error) => {
+      res.status(400).json({ error })
+    })
+}
+
+exports.deleteBook = (req, res, next) => {
+  Book.findOne({ _id: req.params.id })
+    .then((book) => {
+      if (book.userId != req.auth.userId) {
+        res.status(401).json({ message: 'Not authorized' })
+      } else {
+        const filename = book.imageUrl.split('/images/')[1]
+        fs.unlink(`images/${filename}`, () => {
+          Book.deleteOne({ _id: req.params.id })
+            .then(() => {
+              res.status(200).json({ message: 'Objet supprimé !' })
+            })
+            .catch((error) => res.status(401).json({ error }))
         })
-        .catch( error => {
-            res.status(500).json({ error });
-        });
- };
+      }
+    })
+    .catch((error) => {
+      res.status(500).json({ error })
+    })
+}
 
- exports.rateBook = (req, res, next) => {
+exports.rateBook = (req, res, next) => {
+  const newRate = req.body
 
-const newRate = req.body
-
-Book.findOne({
-    _id: req.params.id
+  Book.findOne({
+    _id: req.params.id,
   })
-  .then(
-    (book) => {   
-      
-    const ratings = book.ratings
 
-    if(ratings.some((rating) => rating.userId === req.userId)) {
-     res.status(400).json({ error })
-    } 
+    .then((book) => {
+      const ratings = book.ratings
 
-    const newRating = {userId : newRate.userId, grade : newRate.rating}
-    ratings.push(newRating)
+      if (ratings.some((rating) => rating.userId === req.userId)) {
+        res.status(400).json({ error })
+      }
 
-    const sum = ratings.reduce((accumulator, rating) => {
-      return accumulator + rating.grade
-    }, 0)
-    
-        let averageRating = sum/ratings.length
-        book.averageRating = averageRating.toFixed(1)
+      const newRating = { userId: newRate.userId, grade: newRate.rating }
+      ratings.push(newRating)
 
-   
-    book.save()
-    .then(() => res.status(200).json(book))
-    .catch(error => { res.status(400).json( { error })})
-    }
-  )
-  .catch(
-    (error) => {
+      const sum = ratings.reduce((accumulator, rating) => {
+        return accumulator + rating.grade
+      }, 0)
+
+
+      let averageRating = sum / ratings.length
+      book.averageRating = averageRating.toFixed(1)
+
+      book
+        .save()
+        .then(() => res.status(200).json(book))
+        .catch((error) => {
+          res.status(400).json({ error })
+        })
+    })
+    .catch((error) => {
       res.status(404).json({
-        error: error
-      });
-    }
-  );
-   
-
- }
+        error: error,
+      })
+    })
+}
