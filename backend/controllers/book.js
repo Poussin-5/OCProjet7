@@ -144,6 +144,7 @@ exports.rateBook = (req, res, next) => {
   Book.findOne({
     _id: req.params.id,
   })
+
     .then((book) => {
       const ratings = book.ratings
 
@@ -157,6 +158,7 @@ exports.rateBook = (req, res, next) => {
       const sum = ratings.reduce((accumulator, rating) => {
         return accumulator + rating.grade
       }, 0)
+
 
       let averageRating = sum / ratings.length
       book.averageRating = averageRating.toFixed(1)
