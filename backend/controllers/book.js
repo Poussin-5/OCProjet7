@@ -46,7 +46,9 @@ exports.getBestBooks = (req, res, next) => {
 
 exports.createBook = async (req, res, next) => {
   let compressName = `images/compress_${req.file.filename}`
-  await sharp(req.file.path).resize({ heigth: 300 }).toFile(compressName)
+  await sharp(req.file.path)
+    .resize({ heigth: 200, width: 200 })
+    .toFile(compressName)
 
   const bookObject = JSON.parse(req.body.book)
   delete bookObject._id
@@ -79,7 +81,9 @@ exports.createBook = async (req, res, next) => {
 exports.modifyBook = async (req, res, next) => {
   if (req.file) {
     let compressName = `images/compress_${req.file.filename}`
-    await sharp(req.file.path).resize({ heigth: 300 }).toFile(compressName)
+    await sharp(req.file.path)
+      .resize({ heigth: 200, width: 200 })
+      .toFile(compressName)
   }
 
   const bookObject = req.file
@@ -95,7 +99,7 @@ exports.modifyBook = async (req, res, next) => {
   Book.findOne({ _id: req.params.id })
     .then((book) => {
       if (book.userId != req.auth.userId) {
-        res.status(401).json({ message: 'Not authorized' })
+        res.status(403).json({ message: 'Not authorized' })
       } else {
         Book.updateOne(
           { _id: req.params.id },
@@ -121,7 +125,7 @@ exports.deleteBook = (req, res, next) => {
   Book.findOne({ _id: req.params.id })
     .then((book) => {
       if (book.userId != req.auth.userId) {
-        res.status(401).json({ message: 'Not authorized' })
+        res.status(403).json({ message: 'Not authorized' })
       } else {
         const filename = book.imageUrl.split('/images/')[1]
         fs.unlink(`images/${filename}`, () => {
@@ -141,14 +145,18 @@ exports.deleteBook = (req, res, next) => {
 exports.rateBook = (req, res, next) => {
   const newRate = req.body
 
+  if (newRate.rating > 5 || newRate.rating < 0) {
+    res.status(400).json({ error })
+  }
+
   Book.findOne({
     _id: req.params.id,
   })
     .then((book) => {
       const ratings = book.ratings
 
-      if (ratings.some((rating) => rating.userId === req.userId)) {
-        res.status(400).json({ error })
+      if (ratings.some((rating) => rating.userId === newRate.userId)) {
+        return res.status(400).json({ error })
       }
 
       const newRating = { userId: newRate.userId, grade: newRate.rating }
@@ -169,8 +177,8 @@ exports.rateBook = (req, res, next) => {
         })
     })
     .catch((error) => {
-      res.status(404).json({
-        error: error,
+      res.status(400).json({
+        error,
       })
     })
 }
