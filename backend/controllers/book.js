@@ -45,6 +45,12 @@ exports.getBestBooks = (req, res, next) => {
 }
 
 exports.createBook = async (req, res, next) => {
+  const filetypes = /jpeg|jpg|png|gif/
+  const isValid = filetypes.test(req.file.mimetype)
+  if (!isValid) {
+    return res.status(400).json({ message: "ceci n'est pas une image" })
+  }
+
   let compressName = `images/compress_${req.file.filename}`
   await sharp(req.file.path)
     .resize({ heigth: 200, width: 200 })
@@ -146,7 +152,7 @@ exports.rateBook = (req, res, next) => {
   const newRate = req.body
 
   if (newRate.rating > 5 || newRate.rating < 0) {
-    res.status(400).json({ error })
+    return res.status(400).json({ message: 'la note doit etre en 0 et 5' })
   }
 
   Book.findOne({
