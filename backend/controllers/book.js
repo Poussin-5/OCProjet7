@@ -163,7 +163,9 @@ exports.rateBook = (req, res, next) => {
       const ratings = book.ratings
 
       if (ratings.some((rating) => rating.userId === newRate.userId)) {
-        return res.status(400).json({ error })
+        return res
+          .status(400)
+          .json({ message: "vous ne pouvez notez qu'une seule fois" })
       }
 
       const newRating = { userId: newRate.userId, grade: newRate.rating }
