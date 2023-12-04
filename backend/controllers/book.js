@@ -45,16 +45,19 @@ exports.getBestBooks = (req, res, next) => {
 }
 
 exports.createBook = async (req, res, next) => {
-  const filetypes = /jpeg|jpg|png|gif/
-  const isValid = filetypes.test(req.file.mimetype)
-  if (!isValid) {
-    return res.status(400).json({ message: "ceci n'est pas une image" })
+  if (req.file) {
+    const filetypes = /jpeg|jpg|png|gif/
+    const isValid = filetypes.test(req.file.mimetype)
+    if (!isValid) {
+      return res.status(400).json({ message: "ceci n'est pas une image" })
+    }
+    let compressName = `images/compress_${req.file.filename}`
+    await sharp(req.file.path)
+      .resize({ heigth: 200, width: 200 })
+      .toFile(compressName)
+  } else {
+    return res.status(400).json({ message: "il n'y a pas d'image" })
   }
-
-  let compressName = `images/compress_${req.file.filename}`
-  await sharp(req.file.path)
-    .resize({ heigth: 200, width: 200 })
-    .toFile(compressName)
 
   const bookObject = JSON.parse(req.body.book)
   delete bookObject._id
@@ -86,6 +89,11 @@ exports.createBook = async (req, res, next) => {
 
 exports.modifyBook = async (req, res, next) => {
   if (req.file) {
+    const filetypes = /jpeg|jpg|png|gif/
+    const isValid = filetypes.test(req.file.mimetype)
+    if (!isValid) {
+      return res.status(400).json({ message: "ceci n'est pas une image" })
+    }
     let compressName = `images/compress_${req.file.filename}`
     await sharp(req.file.path)
       .resize({ heigth: 200, width: 200 })
@@ -158,6 +166,7 @@ exports.rateBook = (req, res, next) => {
   Book.findOne({
     _id: req.params.id,
   })
+
     .then((book) => {
       const ratings = book.ratings
 
