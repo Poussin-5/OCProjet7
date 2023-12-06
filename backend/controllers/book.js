@@ -49,7 +49,7 @@ exports.createBook = async (req, res, next) => {
     const filetypes = /jpeg|jpg|png|gif/
     const isValid = filetypes.test(req.file.mimetype)
     if (!isValid) {
-      return res.status(400).json({ message: "ceci n'est pas une image" })
+      return res.status(400).json({ message: "ceci n'est pas une image!" })
     } else {
       let compressName = `images/compress_${req.file.filename}`
       await sharp(req.file.path)
