@@ -50,41 +50,42 @@ exports.createBook = async (req, res, next) => {
     const isValid = filetypes.test(req.file.mimetype)
     if (!isValid) {
       return res.status(400).json({ message: "ceci n'est pas une image" })
+    } else {
+      let compressName = `images/compress_${req.file.filename}`
+      await sharp(req.file.path)
+        .resize({ heigth: 200, width: 200 })
+        .toFile(compressName)
+
+      const bookObject = JSON.parse(req.body.book)
+      delete bookObject._id
+      delete bookObject._userId
+
+      const book = new Book({
+        ...bookObject,
+        userId: req.auth.userId,
+        imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`,
+      })
+
+      book
+        .save()
+        .then(() => {
+          res.status(201).json({ message: 'Objet enregistré !' })
+        })
+        .catch((error) => {
+          res.status(400).json({ error })
+        })
+
+      fs.unlink(req.file.path, (err) => {
+        if (err) {
+          console.error(err)
+        } else {
+          // Suppression réussie !
+        }
+      })
     }
-    let compressName = `images/compress_${req.file.filename}`
-    await sharp(req.file.path)
-      .resize({ heigth: 200, width: 200 })
-      .toFile(compressName)
   } else {
     return res.status(400).json({ message: "il n'y a pas d'image" })
   }
-
-  const bookObject = JSON.parse(req.body.book)
-  delete bookObject._id
-  delete bookObject._userId
-
-  const book = new Book({
-    ...bookObject,
-    userId: req.auth.userId,
-    imageUrl: `${req.protocol}://${req.get('host')}/${compressName}`,
-  })
-
-  book
-    .save()
-    .then(() => {
-      res.status(201).json({ message: 'Objet enregistré !' })
-    })
-    .catch((error) => {
-      res.status(400).json({ error })
-    })
-
-  fs.unlink(req.file.path, (err) => {
-    if (err) {
-      console.error(err)
-    } else {
-      // Suppression réussie !
-    }
-  })
 }
 
 exports.modifyBook = async (req, res, next) => {
